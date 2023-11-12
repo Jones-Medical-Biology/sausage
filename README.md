@@ -23,3 +23,4 @@ https://www.nature.com/articles/s41467-018-07582-3 ).
 ### 2023-11-12
 Started constructing types and began to test a parser implementation
 using Tsoding's JSON parser YouTube video as reference.
+The corresponding repo: https://github.com/tsoding/haskell-json
