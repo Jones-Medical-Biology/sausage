@@ -1,10 +1,10 @@
-name:                infogeno
+name:                sausage
 version:             0.1.0.0
-github:              "githubuser/infogeno"
+github:              "jonesnoaht/sausage"
 license:             BSD-3-Clause
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2023 Author name here"
+author:              "Noah Jones"
+maintainer:          "noahtjones@gmail.com"
+copyright:           "2023 Noah Jones"
 
 extra-source-files:
 - README.md
