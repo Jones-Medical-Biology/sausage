@@ -7,6 +7,8 @@ module Lib
     , umap'
     ) where
 
+import Data.Csv
+
 -- data GeneExpressionData
 --   = GeneCode String
 --   | RelativeExpression Float
