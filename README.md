@@ -24,3 +24,7 @@ https://www.nature.com/articles/s41467-018-07582-3 ).
 Started constructing types and began to test a parser implementation
 using Tsoding's JSON parser YouTube video as reference.
 The corresponding repo: https://github.com/tsoding/haskell-json
+
+### 2024-03-07
+We will want to increase the priority of the AI component in light of the
+new scholarship/grant opportunity.
