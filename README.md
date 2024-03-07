@@ -24,3 +24,9 @@ https://www.nature.com/articles/s41467-018-07582-3 ).
 Started constructing types and began to test a parser implementation
 using Tsoding's JSON parser YouTube video as reference.
 The corresponding repo: https://github.com/tsoding/haskell-json
+
+## FASTA
+Starting a new parser specifically for ATCG documents. The goal is to 
+use minimal datatypes for the base so  that it can be used for streamlined
+ML applications without much extra work especially that on purpose-built
+hardware.
