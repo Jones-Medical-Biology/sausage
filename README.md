@@ -38,3 +38,13 @@ The corresponding repo: https://github.com/tsoding/haskell-json
 ### 2024-01-31
 I am recruiting some help to work on this project, and I need to state
 some clear goals and objectives.
+
+### 2024-03-07
+We will want to increase the priority of the AI component in light of the
+new scholarship/grant opportunity.
+
+## FASTA
+Starting a new parser specifically for ATCG documents. The goal is to 
+use minimal datatypes for the base so  that it can be used for streamlined
+ML applications without much extra work especially that on purpose-built
+hardware.
