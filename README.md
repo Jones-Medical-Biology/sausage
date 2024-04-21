@@ -12,6 +12,16 @@ with less debuging. The choice of Haskell is to make it possible for
 researchers to expertly define workflows and pipelines without
 requiring expertise in software engineering.
 
+### Goals
+#### Add Tools
+ - [ ] UMAP
+ 
+#### Modularize Pipelines
+ - [ ] Tools should be compression agnostic such that the tool
+       receives a feed of data in an uncompressed format and outputs
+       data in an uncompressed format such that any arbitrary
+       decompressor and compressor can be composed with the tool.
+
 ## Notes
 ### 2023-11-04
 I think that maybe [this article](
@@ -24,3 +34,7 @@ https://www.nature.com/articles/s41467-018-07582-3 ).
 Started constructing types and began to test a parser implementation
 using Tsoding's JSON parser YouTube video as reference.
 The corresponding repo: https://github.com/tsoding/haskell-json
+
+### 2024-01-31
+I am recruiting some help to work on this project, and I need to state
+some clear goals and objectives.
