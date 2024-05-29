@@ -6,5 +6,6 @@ pkgs.mkShell {
     ghcid
     stack
     emacs-gtk
+    haskellPackages.cabal-install
   ];
 }

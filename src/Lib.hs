@@ -8,6 +8,7 @@ module Lib
     ) where
 
 import Data.Csv
+import Text.ParserCombinators.Parsec
 
 -- data GeneExpressionData
 --   = GeneCode String
@@ -22,7 +23,6 @@ data SampleId = SampleId String
 
 data RelativeExpression = Float
   deriving (Show, Eq)
-
 
 data GeneExpression = GeneExpression
     { genecode :: GeneCode
@@ -75,3 +75,23 @@ umap' :: [(Int, Int)]
 umap' = umap myvar
   where
     myvar = [[x..(x+3)] | x <- [y..z]]
+
+csvFile :: GenParser Char st [[String]]
+csvFile = 
+  do result <- many line
+    eof
+    return result
+
+line :: GenParser Char st [String]
+line = 
+  do result <- cells
+    eol
+    return result
+
+cells :: GenParser Char st [String]
+cells = 
+  do first <- cellContent
+    next <- remainingCells
+    return (first : next)
+
+
