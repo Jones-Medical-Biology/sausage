@@ -7,5 +7,6 @@ pkgs.mkShell {
     stack
     emacs-gtk
     haskellPackages.cabal-install
+    haskellPackages.parsec
   ];
 }
