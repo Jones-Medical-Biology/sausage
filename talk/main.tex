@@ -1,0 +1,48 @@
+\documentclass{beamer}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{url}
+%Information to be included in the title page:
+\title{Haskell or How I Learned to Stop Worrying and Love in General}
+\author{Noah Thomas Jones}
+\institute{University of Florida}
+\date{}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+  \frametitle{What is Haskell?}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{}
+    \caption{red--B220, green--CD3, blue--AAT}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Problem Statement}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example}
+  This function does a thing, and here we compare it to alternative package that uses GatingML
+    \begin{verbatim}
+run("Merge Channels...", "c1=Image_CH3.tif
+    c2=Image_CH2.tif c3=Image_CH4.tif create");
+Stack.setChannel(1);
+run("Enhance Contrast...", "saturated=0.3");
+Stack.setChannel(2);
+run("Enhance Contrast...", "saturated=0.3");
+Stack.setChannel(3);
+run("Enhance Contrast...", "saturated=0.3");
+    \end{verbatim}
+\end{frame}
+
+
+\nocite{*}
+
+\bibliography{bibliography}
+
+\end{document}
