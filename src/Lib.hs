@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds #-} -- TemplateHaskell, GADTs,
-{-# FlexibleInstances #-}
+--{-# FlexibleInstances #-}
 
 module Lib
     ( someFunc
@@ -46,7 +46,7 @@ data FastaSequence = FastaSequence
   deriving (Show)
 
 newtype Parser a = Parser
-  { runParser :: String -> Maybe (String, a) }
+v  { runParser :: String -> Maybe (String, a) }
 
 -- parse_fasta_head :: String -> Parser String
 -- parse_fasta_head x = Parser f

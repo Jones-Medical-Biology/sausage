@@ -8,5 +8,6 @@ pkgs.mkShell {
     emacs-gtk
     haskellPackages.cabal-install
     haskellPackages.parsec
+    haskell-language-server
   ];
 }
