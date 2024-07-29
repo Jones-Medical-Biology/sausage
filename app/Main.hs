@@ -5,6 +5,7 @@ module Main (main) where
 import Options.Applicative
 import Data.Semigroup ((<>))
 import GHC.Generics
+import Text.Parsec (parse)
 
 import Lib
 import TsvToVcf
@@ -14,14 +15,13 @@ data Command = GnomadConvert
   deriving (Show, Generic)
 
 gnomadConvertParser :: Parser Command
-gnomadConvertParser = GnomadConvert
-  <$> argument str (metavar "INPUT" <> help "Input TSV file")
+gnomadConvertParser = pure GnomadConvert
 
 parseCsvParser :: Parser Command
-parseCsvParser = ParseCsv
-  <$> argument str
-    ( metavar "INPUT"
-      <> help "Input CSV file" )
+parseCsvParser = pure ParseCsv
+  -- <$> argument str
+  --   ( metavar "INPUT"
+  --     <> help "Input CSV file" )
 
 commandParser :: Parser Command
 commandParser = subparser

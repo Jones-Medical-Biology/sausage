@@ -24,6 +24,9 @@ dependencies:
 - text
 - cassava
 - bytestring
+- vector
+- parsec
+- optparse-applicative
 
 ghc-options:
 - -Wall

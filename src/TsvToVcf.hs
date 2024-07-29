@@ -10,7 +10,7 @@ import Data.Monoid ((<>))
 import System.IO (withFile, IOMode(..), hPutStrLn)
 
 data TsvRow = TsvRow
-  { locus         :: !Text
+  { locus         :: !String
   , mean          :: !Double
   , medianApprox  :: !Double
   , totalDP       :: !Int
