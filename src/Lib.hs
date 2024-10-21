@@ -204,3 +204,5 @@ parseCSV input = parse csvFile "(unknown)" input
 -- p_unicode = char 'u' *> (decode <$> count 4 hexDigit)
 --     where decode x = toEnum code
 --               where ((code,_):_) = readHex x
+
+myfirst (x : xs) = x

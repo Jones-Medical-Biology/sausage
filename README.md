@@ -63,3 +63,5 @@ use minimal datatypes for the base so  that it can be used for streamlined
 ML applications without much extra work especially that on purpose-built
 hardware.
 
+# Type-level Metaprogramming
+New near-term goal is a reflection of the grant recently written.

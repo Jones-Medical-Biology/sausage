@@ -5,12 +5,12 @@ module TsvToVcf
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv as Csv
 import qualified Data.Vector as V
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import Data.Monoid ((<>))
 import System.IO (withFile, IOMode(..), hPutStrLn)
 
 data TsvRow = TsvRow
-  { locus         :: !String
+  { locus         :: !Text
   , mean          :: !Double
   , medianApprox  :: !Double
   , totalDP       :: !Int
@@ -68,7 +68,7 @@ gnomadsummarycoverageconvert = do
 
       -- Process and write VCF data
       V.forM_ v $ \row -> do
-        let (chrom, pos) = break (== ':') (locus row)
+        let (chrom, pos) = break (== ':') (unpack $ locus row)
         let info = "mean=" <> show (mean row)
                  <> ";median_approx=" <> show (medianApprox row)
                  <> ";total_DP=" <> show (totalDP row)
