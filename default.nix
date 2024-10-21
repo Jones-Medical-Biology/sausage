@@ -1,14 +1,9 @@
-{ pkgs ? import <nixpkgs> {} }:
-
-pkgs.mkShell {
-  buildInputs = with pkgs; [
-    ghc
-    ghcid
-    stack
-    emacs-gtk
-    haskellPackages.hpack
-    haskellPackages.cabal-install
-    haskellPackages.parsec
-    haskell-language-server
-  ];
+{ pkgs ? import <nixos> {} }:
+pkgs.haskellPackages.developPackage {
+  root = ./.;
+  modifier = drv:
+    pkgs.haskell.lib.addBuildTools drv (with pkgs.haskellPackages;
+      [ cabal-install
+        pkgs.time
+      ]);
 }
