@@ -36,12 +36,17 @@ opts = info (commandParser <**> helper)
 
 main :: IO ()
 main = do
-  command <- execParser opts
-  case command of
-    GnomadConvert -> gnomadsummarycoverageconvert
-    ParseCsv -> do
-      c <- getContents
-      case parse csvFile "(stdin)" c of
-        Left e -> do putStrLn "Error parsing input:"
-                     print e
-        Right r -> mapM_ print r
+  args <- getArgs
+  case args of
+    (x:xs) -> case x of
+      "import-data" -> importData $ xs !! 0
+      "parse" -> do
+        command <- execParser opts
+        case command of
+          GnomadConvert -> gnomadsummarycoverageconvert
+          ParseCsv -> do
+            c <- getContents
+            case parse csvFile "(stdin)" c of
+              Left e -> do putStrLn "Error parsing input:"
+                           print e
+              Right r -> mapM_ print r
