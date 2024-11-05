@@ -1,23 +1,71 @@
 {-# LANGUAGE GADTs #-}
-{-# TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module RnaSeq (importData) where
 
-import Data.Csv (FromNamedRecord, decodeByName, (.:))
+import Data.Csv (FromNamedRecord
+                , decodeByName
+                , (.:)
+                , decDelimiter
+                , FromRecord(..)
+                , defaultDecodeOptions
+                , decodeWith
+                , HasHeader(..)
+                , parseField
+                , Field(..)
+                , Parser(..))
+import Data.Char (ord)
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Vector as V
 
-type Count = Int
+type Count = Double
 
-importData :: FilePath -> ()
-importData x = 
+importData :: FilePath -> IO ()
+importData x = do
+  tsvData <- BL.readFile x
+  let decodeOptions = defaultDecodeOptions {
+        decDelimiter = fromIntegral (ord '\t') }
+      decoded :: Either String (V.Vector TsvRow)
+      decoded = decodeWith decodeOptions HasHeader tsvData
+  case decoded of
+    Left err -> putStrLn $ "Error parsing TSV: " ++ err
+    Right rows -> V.forM_ rows print
 
+instance FromRecord TsvRow where
+  parseRecord :: V.Vector Field -> Parser TsvRow
+  parseRecord v
+    | V.length v >= 2 = do
+        firstColValue <- parseField (v V.! 0)
+        sampleCountsValues <- mapM parseField (V.toList (V.tail v))
+        return $ NcbiFpkmRow firstColValue sampleCountsValues
+    | otherwise = fail "Insufficient columns in record"
+
+myOptions = defaultDecodeOptions {
+  decDelimiter = fromIntegral (ord '\t')
+  }
+ 
 data TsvRow = NcbiFpkmRow
-  { firstColumn :: !String
+  { geneId :: !String
   , sampleCounts :: ![Count]
   } deriving Show
 
-instance FromNamedRecord TsvRow where
-  parseNamedRecord r = do
-    first <- r .: "GeneID"
+data RawCount
+data FPKM
+data TPM
+data GeneName
+
+data Expression a where
+  Raw :: Int -> Expression RawCount
+  Fpkm :: Double -> Expression FPKM
+  Tpm :: Double -> Expression TPM
+  Gene :: String -> Expression GeneName
+  
+-- Perhaps these should be defined in the terms of each other as can
+-- be seen in (see below), but maybe just add a RawToFpkm type or
+-- somesuch.
+-- https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html
 
 addExpr :: Expression a -> Expression a -> Expression a
 addExpr (Raw  x)   (Raw  y)   = Raw  (x + y)
@@ -48,3 +96,5 @@ showExpression expr = case expr of
 
 sumExpressions :: [Expression a] -> Expression a
 sumExpressions = foldl1 addExpr
+
+-- !!! We want to derive functor for these, and so

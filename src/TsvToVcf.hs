@@ -6,7 +6,6 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv as Csv
 import qualified Data.Vector as V
 import Data.Text (Text, unpack)
-import Data.Monoid ((<>))
 import System.IO (withFile, IOMode(..), hPutStrLn)
 
 data TsvRow = TsvRow
