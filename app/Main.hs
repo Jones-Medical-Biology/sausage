@@ -2,6 +2,7 @@
 
 module Main (main) where
 
+import System.Environment (getArgs)
 import Options.Applicative
 import Data.Semigroup ((<>))
 import GHC.Generics
@@ -9,6 +10,7 @@ import Text.Parsec (parse)
 
 import Lib
 import TsvToVcf
+import RnaSeq
 
 data Command = GnomadConvert
   | ParseCsv

@@ -2,23 +2,37 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module RnaSeq (importData) where
 
-import Data.Csv (FromNamedRecord
+import Data.Text (Text)
+import GHC.Generics (Generic)
+import Data.Csv ( FromNamedRecord(..)
+                , ToNamedRecord(..)
+                , DefaultOrdered(..)
                 , decodeByName
+                , decodeByNameWith
                 , (.:)
                 , decDelimiter
                 , FromRecord(..)
+                , ToRecord(..)
                 , defaultDecodeOptions
                 , decodeWith
                 , HasHeader(..)
-                , parseField
+                , NamedRecord(..)
+                , parseNamedRecord
                 , Field(..)
-                , Parser(..))
+                , parseField
+                , Parser(..)
+                , Header(..))
 import Data.Char (ord)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
+import Control.Applicative ((<|>))
+import qualified Data.HashMap.Strict as HM
+import qualified Data.ByteString.Char8 as BS8
 
 type Count = Double
 
@@ -27,20 +41,55 @@ importData x = do
   tsvData <- BL.readFile x
   let decodeOptions = defaultDecodeOptions {
         decDelimiter = fromIntegral (ord '\t') }
-      decoded :: Either String (V.Vector TsvRow)
-      decoded = decodeWith decodeOptions HasHeader tsvData
+      -- decoded :: Either String (V.Vector TsvRow)
+      -- decoded = decodeWith decodeOptions HasHeader tsvData
+      decoded :: Either String (Header, V.Vector TsvRow)
+      decoded = decodeByNameWith decodeOptions tsvData
   case decoded of
     Left err -> putStrLn $ "Error parsing TSV: " ++ err
-    Right rows -> V.forM_ rows print
+    -- Right rows -> do
+    Right (header, rows) -> do
+      printHeader header
+      V.forM_ rows print
 
 instance FromRecord TsvRow where
-  parseRecord :: V.Vector Field -> Parser TsvRow
   parseRecord v
     | V.length v >= 2 = do
         firstColValue <- parseField (v V.! 0)
         sampleCountsValues <- mapM parseField (V.toList (V.tail v))
         return $ NcbiFpkmRow firstColValue sampleCountsValues
     | otherwise = fail "Insufficient columns in record"
+
+-- instance FromNamedRecord TsvRow
+-- instance ToNamedRecord TsvRow
+-- instance DefaultOrdered TsvRow
+
+
+instance FromNamedRecord TsvRow where
+  parseNamedRecord :: NamedRecord -> Parser TsvRow
+  parseNamedRecord r = do
+    let fieldNames = HM.keys r
+        firstFieldName = head fieldNames
+        sampleFieldNames = drop 1 fieldNames
+    firstColValue :: String <- r .: firstFieldName
+    sampleCountsValues <- mapM (r .:) sampleFieldNames
+    return $ NcbiFpkmRow firstColValue sampleCountsValues
+
+-- instance FromNamedRecord TsvRow where
+--   parseNamedRecord :: NamedRecord -> Parser TsvRow
+--   parseNamedRecord r = do
+--     let recordMap = V.toList r
+--         headers = map fst recordMap
+--         values = map snd recordMap
+--     firstColValue <- parseField (values !! 0)
+--     sampleCountsValues <- mapM parseField (drop 1 values)
+--     return $ NcbiFpkmRow (toString firstColValue) sampleCountsValues
+--       where toString = map (toEnum . fromEnum)
+
+printHeader :: Header -> IO ()
+printHeader header = do
+  let headerFields = map BS8.unpack (V.toList header)
+  putStrLn $ unwords headerFields
 
 myOptions = defaultDecodeOptions {
   decDelimiter = fromIntegral (ord '\t')
@@ -49,7 +98,7 @@ myOptions = defaultDecodeOptions {
 data TsvRow = NcbiFpkmRow
   { geneId :: !String
   , sampleCounts :: ![Count]
-  } deriving Show
+  } deriving (Generic, Show)
 
 data RawCount
 data FPKM
