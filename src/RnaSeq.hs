@@ -50,7 +50,8 @@ importData x = do
     -- Right rows -> do
     Right (header, rows) -> do
       printHeader header
-      V.forM_ rows print
+      -- V.forM_ rows print
+      print $ analyze rows
 
 instance FromRecord TsvRow where
   parseRecord v
@@ -63,6 +64,13 @@ instance FromRecord TsvRow where
 -- instance FromNamedRecord TsvRow
 -- instance ToNamedRecord TsvRow
 -- instance DefaultOrdered TsvRow
+
+analyze :: V.Vector TsvRow -> String
+analyze rows = toString $ sumCounts rows
+  where
+    sumCounts :: V.Vector TsvRow -> Double
+    sumCounts rows =  $ sampleCounts rows
+analyze _ = "done"
 
 
 instance FromNamedRecord TsvRow where
