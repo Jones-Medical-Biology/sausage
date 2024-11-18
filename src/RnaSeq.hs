@@ -53,12 +53,23 @@ importData x = do
       -- putStrLn "sum of sample counts"
       -- print $ sumSampleCounts rows
       putStrLn "geneIds"
-      print $ V.map geneId $ V.take 1 rows
-      print $ map (\x -> V.map ((HM.lookup x) . values) rows) $
-        BS8.pack <$> fromHeader header
-      print $ (\x -> V.map ((HM.lookup x) . values) rows) "GSM5011616"
+      print $ getTopGeneId rows
+      print $ headerToValues header rows
+      print $ sampleKeyToValues "GSM5011616" rows
       putStrLn "grab the row"
-      print $ V.head $ V.filter (\row -> geneId row == "100287102") rows
+      print $ geneKeyToValues "100287102" rows
+
+getTopGeneId :: V.Vector NcbiRow -> V.Vector String
+getTopGeneId rows = V.map geneId $ V.take 1 rows
+
+headerToValues :: Header -> V.Vector NcbiRow -> [V.Vector (Maybe BS8.ByteString)]
+headerToValues header rows = map (\x -> V.map (HM.lookup x . values) rows) $ BS8.pack <$> fromHeader header
+
+sampleKeyToValues :: BS8.ByteString -> V.Vector NcbiRow -> V.Vector (Maybe BS8.ByteString)
+sampleKeyToValues key = V.map ((HM.lookup key) . values)
+
+geneKeyToValues :: String -> V.Vector NcbiRow -> NcbiRow
+geneKeyToValues key rows = V.head $ V.filter (\row -> geneId row == key) rows
 
 data NcbiRow = NcbiFpkmRow
   { geneId :: !String
