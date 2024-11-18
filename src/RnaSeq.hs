@@ -54,9 +54,11 @@ importData x = do
       -- print $ sumSampleCounts rows
       putStrLn "geneIds"
       print $ V.map geneId $ V.take 1 rows
-      print $ map (\x -> V.map ((HM.lookup x) . values) rows) header
+      print $ map (\x -> V.map ((HM.lookup x) . values) rows) $
+        BS8.pack <$> fromHeader header
       print $ (\x -> V.map ((HM.lookup x) . values) rows) "GSM5011616"
-
+      putStrLn "grab the row"
+      print $ V.head $ V.filter (\row -> geneId row == "100287102") rows
 
 data NcbiRow = NcbiFpkmRow
   { geneId :: !String
@@ -78,10 +80,9 @@ getIndex x y = until ((\x y i -> y == x !! i) x y) (0 +)
 
 printHeader :: Header -> IO ()
 printHeader header = do
-  let headerFields = map BS8.unpack (V.toList header)
-  putStrLn $ unwords headerFields
+  putStrLn $ (unwords . fromHeader) header
 
-fromHeader :: Header -> [[Char]]
+fromHeader :: Header -> [String]
 fromHeader x = map BS8.unpack $ V.toList x
   
 -- ! Goal is to set up monads so that we can apply a series of
