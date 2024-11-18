@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -8,6 +7,7 @@
 module RnaSeq (importData) where
 
 import Data.Text (Text)
+import Data.Maybe (fromJust)
 import GHC.Generics (Generic)
 import Data.Csv ( FromNamedRecord(..)
                 , ToNamedRecord(..)
@@ -26,13 +26,16 @@ import Data.Csv ( FromNamedRecord(..)
                 , Field(..)
                 , parseField
                 , Parser(..)
-                , Header(..))
+                , Header(..)
+                , Record(..))
 import Data.Char (ord)
+import Debug.Trace (trace)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
 import Control.Applicative ((<|>))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Char8 as BS8
+import qualified Distribution.Simple.Utils as Utils
 
 importData :: FilePath -> IO ()
 importData x = do
@@ -45,44 +48,42 @@ importData x = do
     Left err -> putStrLn $ "Error parsing TSV: " ++ err
     Right (header, rows) -> do
       printHeader header
-      putStrLn "fpkm of top 10 rows"
-      print $ V.foldl1 (zipWith (+)) (V.map counts $ V.take 10 rows)
-      putStrLn "sum of sample counts"
-      print $ sumSampleCounts rows
+      -- putStrLn "fpkm of top 10 rows"
+      -- print $ V.foldl1 (zipWith (+)) (V.map counts $ V.take 10 rows)
+      -- putStrLn "sum of sample counts"
+      -- print $ sumSampleCounts rows
+      putStrLn "geneIds"
+      print $ V.map geneId $ V.take 1 rows
+      print $ map (\x -> V.map ((HM.lookup x) . values) rows) header
+      print $ (\x -> V.map ((HM.lookup x) . values) rows) "GSM5011616"
 
-sumSampleCounts :: V.Vector NcbiRow -> [Float]
-sumSampleCounts rows = V.foldl1 (zipWith (+)) (V.map counts rows)
 
-instance FromRecord NcbiRow where
-  parseRecord v
-    | V.length v >= 2 = do
-        firstColValue <- parseField (v V.! 0)
-        fpkmValues <- mapM parseField (V.toList (V.tail v))
-        return $ NcbiFpkmRow firstColValue fpkmValues
-    | otherwise = fail "Insufficient columns in record"
+data NcbiRow = NcbiFpkmRow
+  { geneId :: !String
+  , values :: HM.HashMap BS8.ByteString BS8.ByteString
+  , source :: !String -- the source document probably as a hash
+  }
+  deriving (Generic, Show)
 
 instance FromNamedRecord NcbiRow where
   parseNamedRecord :: NamedRecord -> Parser NcbiRow
   parseNamedRecord r = do
-    let fieldNames = HM.keys r
-        firstFieldName = head fieldNames
-        sampleFieldNames = drop 1 fieldNames
-    firstColValue :: String <- r .: firstFieldName
-    fpkmValues <- mapM (r .:) sampleFieldNames
-    return $ NcbiFpkmRow firstColValue fpkmValues
+    let firstFieldKey = "GeneID"
+        restHM = HM.delete firstFieldKey r
+    geneIdVal <- r .: firstFieldKey
+    return $ NcbiFpkmRow geneIdVal restHM ""
+
+getIndex :: Eq a => [a] -> a -> Int -> Int
+getIndex x y = until ((\x y i -> y == x !! i) x y) (0 +)
 
 printHeader :: Header -> IO ()
 printHeader header = do
   let headerFields = map BS8.unpack (V.toList header)
   putStrLn $ unwords headerFields
-  
-data NcbiRow = NcbiFpkmRow
-  { geneId :: !String
-  , counts :: ![Float]
-  , source :: !String -- the source document probably as a hash
-  }
-  deriving (Generic, Show)
 
+fromHeader :: Header -> [[Char]]
+fromHeader x = map BS8.unpack $ V.toList x
+  
 -- ! Goal is to set up monads so that we can apply a series of
 -- ! transformations with bind.
 
