@@ -58,6 +58,8 @@ importData x = do
       print $ sampleKeyToValues "GSM5011616" rows
       putStrLn "grab the row"
       print $ geneKeyToValues "100287102" rows
+      putStrLn "gene ids"
+      print $ getGeneIds rows
 
 getTopGeneId :: V.Vector NcbiRow -> V.Vector String
 getTopGeneId rows = V.map geneId $ V.take 1 rows
@@ -70,6 +72,9 @@ sampleKeyToValues key = V.map ((HM.lookup key) . values)
 
 geneKeyToValues :: String -> V.Vector NcbiRow -> NcbiRow
 geneKeyToValues key rows = V.head $ V.filter (\row -> geneId row == key) rows
+
+getGeneIds :: V.Vector NcbiRow -> V.Vector String
+getGeneIds rows = V.map geneId rows
 
 data NcbiRow = NcbiFpkmRow
   { geneId :: !String
@@ -95,6 +100,8 @@ printHeader header = do
 
 fromHeader :: Header -> [String]
 fromHeader x = map BS8.unpack $ V.toList x
+
+-- [ ] We need to know what the gene ids convert to
   
 -- ! Goal is to set up monads so that we can apply a series of
 -- ! transformations with bind.
