@@ -3,6 +3,8 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE StrictData #-}
 
 module RnaSeq (importData) where
 
@@ -37,29 +39,32 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Char8 as BS8
 import qualified Distribution.Simple.Utils as Utils
 
-importData :: FilePath -> IO ()
-importData x = do
-  tsvData <- BL.readFile x
+importData :: FilePath -> FilePath -> IO ()
+importData file1 file2 = do
+  tsvData <- BL.readFile file1
+  metaData <- BL.readFile file2
   let decodeOptions = defaultDecodeOptions {
         decDelimiter = fromIntegral (ord '\t') }
-      decoded :: Either String (Header, V.Vector NcbiRow)
-      decoded = decodeByNameWith decodeOptions tsvData
-  case decoded of
-    Left err -> putStrLn $ "Error parsing TSV: " ++ err
-    Right (header, rows) -> do
+      decodeData :: (Either String (Header, V.Vector NcbiRow))
+      decodeData = decodeByNameWith decodeOptions tsvData
+      decodeMeta :: (Either String (Header, V.Vector MetadataRow))
+      decodeMeta = decodeByNameWith decodeOptions metaData
+  case (decodeData, decodeMeta) of
+    (Left err, _) -> putStrLn $ "Error parsing dataTSV: " ++ err
+    (_, Left err) -> putStrLn $ "Error parsing metaTSV: " ++ err
+    (Right (header, rows), Right (metaHeader, metaRows)) -> do
       printHeader header
+      printHeader metaHeader
       -- putStrLn "fpkm of top 10 rows"
       -- print $ V.foldl1 (zipWith (+)) (V.map counts $ V.take 10 rows)
       -- putStrLn "sum of sample counts"
       -- print $ sumSampleCounts rows
-      putStrLn "geneIds"
-      print $ getTopGeneId rows
-      print $ headerToValues header rows
-      print $ sampleKeyToValues "GSM5011616" rows
-      putStrLn "grab the row"
-      print $ geneKeyToValues "100287102" rows
-      putStrLn "gene ids"
-      print $ getGeneIds rows
+      -- print $ headerToValues header rows
+      -- print $ sampleKeyToValues "GSM5011616" rows
+      -- putStrLn "grab the row"
+      -- print $ geneKeyToValues "100287102" rows
+      -- putStrLn "gene ids"
+      -- print $ getGeneIds rows
 
 getTopGeneId :: V.Vector NcbiRow -> V.Vector String
 getTopGeneId rows = V.map geneId $ V.take 1 rows
@@ -74,12 +79,18 @@ geneKeyToValues :: String -> V.Vector NcbiRow -> NcbiRow
 geneKeyToValues key rows = V.head $ V.filter (\row -> geneId row == key) rows
 
 getGeneIds :: V.Vector NcbiRow -> V.Vector String
-getGeneIds rows = V.map geneId rows
+getGeneIds = V.map geneId
 
 data NcbiRow = NcbiFpkmRow
   { geneId :: !String
   , values :: HM.HashMap BS8.ByteString BS8.ByteString
   , source :: !String -- the source document probably as a hash
+  } deriving (Generic, Show)
+
+data MetadataRow = MetadataRow
+  { metaGeneId :: !String
+  , metaValues :: HM.HashMap BS8.ByteString BS8.ByteString
+  , metaSource :: !String -- the source document probably as a hash
   }
   deriving (Generic, Show)
 
@@ -90,6 +101,14 @@ instance FromNamedRecord NcbiRow where
         restHM = HM.delete firstFieldKey r
     geneIdVal <- r .: firstFieldKey
     return $ NcbiFpkmRow geneIdVal restHM ""
+
+instance FromNamedRecord MetadataRow where
+  parseNamedRecord :: NamedRecord -> Parser MetadataRow
+  parseNamedRecord r = do
+    let firstFieldKey = "GeneID"
+        restHM = HM.delete firstFieldKey r
+    geneIdVal <- r .: firstFieldKey
+    return $ MetadataRow geneIdVal restHM ""
 
 getIndex :: Eq a => [a] -> a -> Int -> Int
 getIndex x y = until ((\x y i -> y == x !! i) x y) (0 +)
