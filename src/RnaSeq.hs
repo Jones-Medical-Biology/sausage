@@ -55,6 +55,13 @@ importData file1 file2 = do
     (Right (header, rows), Right (metaHeader, metaRows)) -> do
       printHeader header
       printHeader metaHeader
+      let a = V.head metaRows
+      let b = metaGeneId a
+      let c = metaValues a
+      let d = HM.filterWithKey (\key value -> (any ((==) key) (map BS8.pack $ fromHeader header) && (BS8.isInfixOf "KIAA0319L" value))) c
+      let e = geneKeyToValues "79932"
+      print $ e
+      -- print $ HM.head $ geneId $ V.take 1 rows
       -- putStrLn "fpkm of top 10 rows"
       -- print $ V.foldl1 (zipWith (+)) (V.map counts $ V.take 10 rows)
       -- putStrLn "sum of sample counts"
@@ -68,16 +75,13 @@ importData file1 file2 = do
 
 getTopGeneId :: V.Vector NcbiRow -> V.Vector String
 getTopGeneId rows = V.map geneId $ V.take 1 rows
-
 headerToValues :: Header -> V.Vector NcbiRow -> [V.Vector (Maybe BS8.ByteString)]
-headerToValues header rows = map (\x -> V.map (HM.lookup x . values) rows) $ BS8.pack <$> fromHeader header
-
+headerToValues header rows = map (\x -> V.map (HM.lookup x . values) rows)
+  $ BS8.pack <$> fromHeader header
 sampleKeyToValues :: BS8.ByteString -> V.Vector NcbiRow -> V.Vector (Maybe BS8.ByteString)
 sampleKeyToValues key = V.map ((HM.lookup key) . values)
-
 geneKeyToValues :: String -> V.Vector NcbiRow -> NcbiRow
 geneKeyToValues key rows = V.head $ V.filter (\row -> geneId row == key) rows
-
 getGeneIds :: V.Vector NcbiRow -> V.Vector String
 getGeneIds = V.map geneId
 
