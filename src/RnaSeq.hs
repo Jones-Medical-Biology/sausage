@@ -6,8 +6,10 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE StrictData #-}
 
-module RnaSeq (importData) where
+module RnaSeq (importData
+              ,processTFPathways) where
 
+import System.Environment ( getArgs )
 import Data.Text (Text)
 import Data.Maybe (fromJust)
 import GHC.Generics (Generic)
@@ -38,6 +40,7 @@ import Control.Applicative ((<|>))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Char8 as BS8
 import qualified Distribution.Simple.Utils as Utils
+import Text.Parsec ( alphaNum, char, sepBy, many, parse )
 
 importData :: FilePath -> FilePath -> IO ()
 importData file1 file2 = do
@@ -58,9 +61,12 @@ importData file1 file2 = do
       let a = V.head metaRows
       let b = metaGeneId a
       let c = metaValues a
-      let d = HM.filterWithKey (\key value -> (any ((==) key) (map BS8.pack $ fromHeader header) && (BS8.isInfixOf "KIAA0319L" value))) c
-      let e = geneKeyToValues "79932"
-      print $ e
+      let d = HM.filterWithKey (\key value -> (any (key ==) (map BS8.pack $ fromHeader header) && (BS8.isInfixOf "KIAA0319L" value))) c
+      let e = geneKeyToValues "79932" rows
+      let f = geneKeyToValues "9856" rows
+      print $ HM.keys $ values e
+      print $ map snd $ HM.toList $ values e
+      print $ map snd $ HM.toList $ values f
       -- print $ HM.head $ geneId $ V.take 1 rows
       -- putStrLn "fpkm of top 10 rows"
       -- print $ V.foldl1 (zipWith (+)) (V.map counts $ V.take 10 rows)
@@ -123,6 +129,19 @@ printHeader header = do
 
 fromHeader :: Header -> [String]
 fromHeader x = map BS8.unpack $ V.toList x
+
+processTFPathways :: [String] -> IO ()
+processTFPathways thing = do
+  let z = thing
+  if length z == 2
+  then do
+    -- mapM_ putStrLn z
+    a <- readFile $ (head . tail) z
+    case parse (many (alphaNum <|> char ':') `sepBy` char '\t') "input" a of
+      Left err -> print err
+      Right result -> print result
+  else
+    putStrLn "nothing"
 
 -- [ ] We need to know what the gene ids convert to
   

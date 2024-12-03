@@ -10,7 +10,7 @@ import Text.Parsec (parse)
 
 import Lib
 import TsvToVcf
-import RnaSeq
+import RnaSeq ( importData, processTFPathways )
 
 data Command = GnomadConvert
   | ParseCsv
@@ -41,7 +41,10 @@ main = do
   args <- getArgs
   case args of
     (x:xs) -> case x of
-      "import-data" -> importData $ xs !! 0
+      "import-data" -> importData (head xs :: FilePath) ((head . tail) xs :: FilePath)
+      "stuff" -> do
+        z <- getArgs
+        processTFPathways z
       "parse" -> do
         command <- execParser opts
         case command of
@@ -52,3 +55,6 @@ main = do
               Left e -> do putStrLn "Error parsing input:"
                            print e
               Right r -> mapM_ print r
+          _anyOtherFailure -> print "bad day"
+      _ -> print "bad day"
+    _ -> print "very bad day"
