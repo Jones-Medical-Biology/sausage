@@ -40,7 +40,7 @@ import Control.Applicative ((<|>))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Char8 as BS8
 import qualified Distribution.Simple.Utils as Utils
-import Text.Parsec ( alphaNum, char, sepBy, many, parse )
+import Text.Parsec ( alphaNum, char, sepBy, many, parse, oneOf )
 
 importData :: FilePath -> FilePath -> IO ()
 importData file1 file2 = do
@@ -137,11 +137,13 @@ processTFPathways thing = do
   then do
     -- mapM_ putStrLn z
     a <- readFile $ (head . tail) z
-    case parse (many (alphaNum <|> char ':') `sepBy` char '\t') "input" a of
+    case parse ((many (alphaNum <|> char ' ') `sepBy` oneOf ":,;") `sepBy` char '\t') "input" a of
       Left err -> print err
       Right result -> print result
   else
     putStrLn "nothing"
+
+-- [ ] We need some rules here about parsing
 
 -- [ ] We need to know what the gene ids convert to
   
