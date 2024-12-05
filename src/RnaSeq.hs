@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module RnaSeq (importData
               ,processTFPathways) where
@@ -40,7 +41,16 @@ import Control.Applicative ((<|>))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Char8 as BS8
 import qualified Distribution.Simple.Utils as Utils
-import Text.Parsec ( alphaNum, char, sepBy, many, parse, oneOf )
+import Text.Parsec ( alphaNum
+                   , char
+                   , string
+                   , sepBy
+                   , many
+                   , parse
+                   , oneOf )
+import Text.Parsec.Prim ( Stream(..)
+                        , ParsecT(..) )
+import Text.Parsec.Combinator ( choice )
 
 importData :: FilePath -> FilePath -> IO ()
 importData file1 file2 = do
@@ -61,7 +71,7 @@ importData file1 file2 = do
       let a = V.head metaRows
       let b = metaGeneId a
       let c = metaValues a
-      let d = HM.filterWithKey (\key value -> (any (key ==) (map BS8.pack $ fromHeader header) && (BS8.isInfixOf "KIAA0319L" value))) c
+      let d = HM.filterWithKey (\key value -> any ((key ==) . BS8.pack) (fromHeader header) && BS8.isInfixOf "KIAA0319L" value) c
       let e = geneKeyToValues "79932" rows
       let f = geneKeyToValues "9856" rows
       print $ HM.keys $ values e
@@ -130,6 +140,9 @@ printHeader header = do
 fromHeader :: Header -> [String]
 fromHeader x = map BS8.unpack $ V.toList x
 
+strings :: Stream s m Char =>  String -> ParsecT s u m String
+strings = choice . map (string . pure)
+
 processTFPathways :: [String] -> IO ()
 processTFPathways thing = do
   let z = thing
@@ -137,7 +150,7 @@ processTFPathways thing = do
   then do
     -- mapM_ putStrLn z
     a <- readFile $ (head . tail) z
-    case parse ((many (alphaNum <|> char ' ') `sepBy` oneOf ":,;") `sepBy` char '\t') "input" a of
+    case parse ((many (alphaNum <|> char ' ') `sepBy` (string ", " <|> strings ":,;")) `sepBy` char '\t') "input" a of
       Left err -> print err
       Right result -> print result
   else
