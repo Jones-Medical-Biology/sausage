@@ -6,6 +6,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module RnaSeq (importData
               ,processTFPathways) where
@@ -155,6 +156,52 @@ processTFPathways thing = do
       Right result -> print result
   else
     putStrLn "nothing"
+
+data NucleicAcidBase = DnaBase | RnaBase
+
+data DnaBase = DA | DT | DC | DG
+    deriving (Show, Eq)
+
+data RnaBase = A | U | C | G
+    deriving (Show, Eq)
+
+class Complement a where
+    complement :: a -> a
+
+instance Complement DnaBase where
+    complement :: DnaBase -> DnaBase
+    complement DA = DT
+    complement DT = DA
+    complement DC = DG
+    complement DG = DC
+
+instance Complement RnaBase where
+    complement :: RnaBase -> RnaBase
+    complement A = U
+    complement U = A
+    complement C = G
+    complement G = C
+
+class Transcribe a b where
+    transcribe :: a -> b
+
+instance Transcribe DnaBase RnaBase where
+    transcribe DA = A
+    transcribe DT = U
+    transcribe DC = C
+    transcribe DG = G
+
+type DnaSequence = [DnaBase]
+type RnaSequence = [RnaBase]
+
+newtype Quality = Quality { unQuality :: Int }
+    deriving (Show, Eq)
+
+data FastqBase = FastqBase 
+    { baseValue :: DnaBase
+    , quality :: Quality
+    }
+    deriving (Show, Eq)
 
 -- [ ] We need some rules here about parsing
 
