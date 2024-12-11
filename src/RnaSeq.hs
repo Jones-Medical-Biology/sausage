@@ -7,9 +7,12 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DefaultSignatures #-}
 
-module RnaSeq (importData
-              ,processTFPathways) where
+module RnaSeq ( importData
+              , processTFPathways) where
 
 import System.Environment ( getArgs )
 import Data.Text (Text)
@@ -78,6 +81,7 @@ importData file1 file2 = do
       print $ HM.keys $ values e
       print $ map snd $ HM.toList $ values e
       print $ map snd $ HM.toList $ values f
+      print $ V.foldr (+) 0 rows
       -- print $ HM.head $ geneId $ V.take 1 rows
       -- putStrLn "fpkm of top 10 rows"
       -- print $ V.foldl1 (zipWith (+)) (V.map counts $ V.take 10 rows)
@@ -158,15 +162,29 @@ processTFPathways thing = do
     putStrLn "nothing"
 
 data NucleicAcidBase = DnaBase | RnaBase
+  deriving (Show, Eq)
 
 data DnaBase = DA | DT | DC | DG
-    deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
+  -- deriving Codonable
 
 data RnaBase = A | U | C | G
-    deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
+  -- deriving Codonable
 
 class Complement a where
-    complement :: a -> a
+  complement :: a -> a
+
+-- class Codonable a where
+--   default codons :: [a] -> [(a,a,a)]
+--   codons = codonsGeneric
+
+-- codonsGeneric :: [a] -> [(a,a,a)]
+-- codonsGeneric (a:b:c:xs) = (a,b,c) : codonsGeneric xs
+-- codonsGeneric _ = []
+
+-- class Readingframe a where
+--   readingframe :: 
 
 instance Complement DnaBase where
     complement :: DnaBase -> DnaBase
@@ -198,9 +216,8 @@ newtype Quality = Quality { unQuality :: Int }
     deriving (Show, Eq)
 
 data FastqBase = FastqBase 
-    { baseValue :: DnaBase
-    , quality :: Quality
-    }
+    { baseValue :: NucleicAcidBase
+    , quality :: Quality }
     deriving (Show, Eq)
 
 -- [ ] We need some rules here about parsing
