@@ -52,6 +52,7 @@ import Text.Parsec ( alphaNum
                    , many
                    , parse
                    , oneOf )
+import Data.Maybe (fromMaybe)
 import Text.Parsec.Prim ( Stream(..)
                         , ParsecT(..) )
 import Text.Parsec.Combinator ( choice )
@@ -72,17 +73,20 @@ importData file1 file2 = do
     (Right (header, rows), Right (metaHeader, metaRows)) -> do
       printHeader header
       printHeader metaHeader
-      let a = V.head metaRows
-      let b = metaGeneId a
-      let c = metaValues a
-      let d = HM.filterWithKey (\key value -> any ((key ==) . BS8.pack) (fromHeader header) && BS8.isInfixOf "KIAA0319L" value) c
-      let e = geneKeyToValues "79932" rows
-      let f = geneKeyToValues "9856" rows
-      print $ HM.keys $ values e
-      print $ map snd $ HM.toList $ values e
-      print $ map snd $ HM.toList $ values f
-      let g =  HM.toList . values <$> rows
-      print g
+      -- print $ getTopGeneId rows
+      let floated = V.map (doohickie . values) $ V.take 10 rows
+      print $ sumSamples floated
+      -- let a = V.head metaRows
+      -- let b = metaGeneId a
+      -- let c = metaValues a
+      -- let d = HM.filterWithKey (\key value -> any ((key ==) . BS8.pack) (fromHeader header) && BS8.isInfixOf "KIAA0319L" value) c
+      -- let e = geneKeyToValues "79932" rows
+      -- let f = geneKeyToValues "9856" rows
+      -- print $ HM.keys $ values e
+      -- print $ map snd $ HM.toList $ values e
+      -- print $ map snd $ HM.toList $ values f
+      -- let g =  HM.toList . values <$> rows
+      -- print $ V.head g
       --  $ map snd $
       -- print $ HM.head $ geneId $ V.take 1 rows
       -- putStrLn "fpkm of top 10 rows"
@@ -96,15 +100,30 @@ importData file1 file2 = do
       -- putStrLn "gene ids"
       -- print $ getGeneIds rows
 
+doohickie :: HM.HashMap BS8.ByteString BS8.ByteString -> HM.HashMap BS8.ByteString Float
+doohickie inputMap = HM.mapMaybe parseFloat inputMap
+  where
+    parseFloat :: BS8.ByteString -> Maybe Float
+    parseFloat bs = case reads (BS8.unpack bs) of
+                      [(x, "")] -> Just x
+                      _         -> Nothing
+
+sumSamples :: V.Vector (HM.HashMap BS8.ByteString Float) -> HM.HashMap BS8.ByteString Float
+sumSamples = V.foldl' (HM.unionWith (+)) HM.empty
+
 getTopGeneId :: V.Vector NcbiRow -> V.Vector String
 getTopGeneId rows = V.map geneId $ V.take 1 rows
+
 headerToValues :: Header -> V.Vector NcbiRow -> [V.Vector (Maybe BS8.ByteString)]
 headerToValues header rows = map (\x -> V.map (HM.lookup x . values) rows)
   $ BS8.pack <$> fromHeader header
+
 sampleKeyToValues :: BS8.ByteString -> V.Vector NcbiRow -> V.Vector (Maybe BS8.ByteString)
 sampleKeyToValues key = V.map ((HM.lookup key) . values)
+
 geneKeyToValues :: String -> V.Vector NcbiRow -> NcbiRow
 geneKeyToValues key rows = V.head $ V.filter (\row -> geneId row == key) rows
+
 getGeneIds :: V.Vector NcbiRow -> V.Vector String
 getGeneIds = V.map geneId
 
