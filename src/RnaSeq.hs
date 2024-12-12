@@ -81,7 +81,9 @@ importData file1 file2 = do
       print $ HM.keys $ values e
       print $ map snd $ HM.toList $ values e
       print $ map snd $ HM.toList $ values f
-      print $ V.foldr (+) 0 rows
+      let g =  HM.toList . values <$> rows
+      print g
+      --  $ map snd $
       -- print $ HM.head $ geneId $ V.take 1 rows
       -- putStrLn "fpkm of top 10 rows"
       -- print $ V.foldl1 (zipWith (+)) (V.map counts $ V.take 10 rows)
