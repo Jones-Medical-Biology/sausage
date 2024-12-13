@@ -86,7 +86,7 @@ importData genename file1 file2 = do
       let matchedGeneIds = V.map metaGeneId entryMatch
       let matchedEntry =  V.filter (\x -> any (geneId x ==) matchedGeneIds) rows
       let namedRecordsMatchedEntry = V.map toNamedRecord matchedEntry
-      print $ encodeByName header $ V.toList namedRecordsMatchedEntry
+      BL.putStr . encodeByName header $ V.toList namedRecordsMatchedEntry
 
 floatIt :: HM.HashMap BS8.ByteString BS8.ByteString -> HM.HashMap BS8.ByteString Float
 floatIt inputMap = HM.mapMaybe parseFloat inputMap
