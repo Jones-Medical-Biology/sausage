@@ -79,37 +79,14 @@ importData genename file1 file2 = do
       -- printHeader header
       -- printHeader metaHeader
       -- print $ getTopGeneId rows
-      let floated = V.map (floatIt . values) $ rows
+      let floated = V.map values $ rows
       let sums = sumSamples floated
       -- print $ V.map (HM.unionWith (/) sums) floated
       let entryMatch = V.filter (\x -> HM.lookup "Symbol" (metaValues x) == Just (BS8.pack genename)) metaRows
       let matchedGeneIds = V.map metaGeneId entryMatch
-      let matchedEntry = V.filter (\x -> any (geneId x ==) matchedGeneIds) rows
+      let matchedEntry =  V.filter (\x -> any (geneId x ==) matchedGeneIds) rows
       let namedRecordsMatchedEntry = V.map toNamedRecord matchedEntry
       print $ encodeByName header $ V.toList namedRecordsMatchedEntry
-      -- let a = V.head metaRows
-      -- let b = metaGeneId a
-      -- let c = metaValues a
-      -- let d = HM.filterWithKey (\key value -> any ((key ==) . BS8.pack) (fromHeader header) && BS8.isInfixOf "KIAA0319L" value) c
-      -- let e = geneKeyToValues "79932" rows
-      -- let f = geneKeyToValues "9856" rows
-      -- print $ HM.keys $ values e
-      -- print $ map snd $ HM.toList $ values e
-      -- print $ map snd $ HM.toList $ values f
-      -- let g =  HM.toList . values <$> rows
-      -- print $ V.head g
-      --  $ map snd $
-      -- print $ HM.head $ geneId $ V.take 1 rows
-      -- putStrLn "fpkm of top 10 rows"
-      -- print $ V.foldl1 (zipWith (+)) (V.map counts $ V.take 10 rows)
-      -- putStrLn "sum of sample counts"
-      -- print $ sumSampleCounts rows
-      -- print $ headerToValues header rows
-      -- print $ sampleKeyToValues "GSM5011616" rows
-      -- putStrLn "grab the row"
-      -- print $ geneKeyToValues "100287102" rows
-      -- putStrLn "gene ids"
-      -- print $ getGeneIds rows
 
 floatIt :: HM.HashMap BS8.ByteString BS8.ByteString -> HM.HashMap BS8.ByteString Float
 floatIt inputMap = HM.mapMaybe parseFloat inputMap
@@ -125,11 +102,11 @@ sumSamples = V.foldl' (HM.unionWith (+)) HM.empty
 getTopGeneId :: V.Vector NcbiRow -> V.Vector String
 getTopGeneId rows = V.map geneId $ V.take 1 rows
 
-headerToValues :: Header -> V.Vector NcbiRow -> [V.Vector (Maybe BS8.ByteString)]
+headerToValues :: Header -> V.Vector NcbiRow -> [V.Vector (Maybe Float)]
 headerToValues header rows = map (\x -> V.map (HM.lookup x . values) rows)
   $ BS8.pack <$> fromHeader header
 
-sampleKeyToValues :: BS8.ByteString -> V.Vector NcbiRow -> V.Vector (Maybe BS8.ByteString)
+sampleKeyToValues :: BS8.ByteString -> V.Vector NcbiRow -> V.Vector (Maybe Float)
 sampleKeyToValues key = V.map ((HM.lookup key) . values)
 
 geneKeyToValues :: String -> V.Vector NcbiRow -> NcbiRow
@@ -140,7 +117,7 @@ getGeneIds = V.map geneId
 
 data NcbiRow = NcbiFpkmRow
   { geneId :: !String
-  , values :: HM.HashMap BS8.ByteString BS8.ByteString
+  , values :: HM.HashMap BS8.ByteString Float
   , source :: !String -- the source document probably as a hash
   } deriving (Generic, Show)
 
@@ -155,7 +132,7 @@ instance FromNamedRecord NcbiRow where
   parseNamedRecord :: NamedRecord -> Parser NcbiRow
   parseNamedRecord r = do
     let firstFieldKey = "GeneID"
-        restHM = HM.delete firstFieldKey r
+        restHM = floatIt $ HM.delete firstFieldKey r
     geneIdVal <- r .: firstFieldKey
     return $ NcbiFpkmRow geneIdVal restHM ""
 
@@ -173,6 +150,10 @@ instance FromNamedRecord MetadataRow where
   parseNamedRecord r = do
     let firstFieldKey = "GeneID"
         restHM = HM.delete firstFieldKey r
+        parseFloat :: BS8.ByteString -> Maybe Float
+        parseFloat bs = case reads (BS8.unpack bs) of
+                          [(x, "")] -> Just x
+                          _         -> Nothing
     geneIdVal <- r .: firstFieldKey
     return $ MetadataRow geneIdVal restHM ""
 
@@ -268,7 +249,7 @@ data FastqBase = FastqBase
 -- ! Goal is to set up monads so that we can apply a series of
 -- ! transformations with bind.
 
-data Count = Fpkm Float | Fpm Float | RawCount Int
+data Count = Fpkm Float| Fpm Float | RawCount Int
   
 -- Perhaps these should be defined in the terms of each other as can
 -- be seen in (see below), but maybe just add a RawToFpkm type or
