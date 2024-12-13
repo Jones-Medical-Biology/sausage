@@ -20,10 +20,14 @@ import Data.Maybe (fromJust)
 import GHC.Generics (Generic)
 import Data.Csv ( FromNamedRecord(..)
                 , ToNamedRecord(..)
+                , namedRecord
                 , DefaultOrdered(..)
                 , decodeByName
                 , decodeByNameWith
+                , encodeByName
+                , encodeDefaultOrderedByName
                 , (.:)
+                , (.=)
                 , decDelimiter
                 , FromRecord(..)
                 , ToRecord(..)
@@ -37,6 +41,7 @@ import Data.Csv ( FromNamedRecord(..)
                 , Parser(..)
                 , Header(..)
                 , Record(..))
+import Data.List (isInfixOf, nub)
 import Data.Char (ord)
 import Debug.Trace (trace)
 import qualified Data.ByteString.Lazy as BL
@@ -57,8 +62,8 @@ import Text.Parsec.Prim ( Stream(..)
                         , ParsecT(..) )
 import Text.Parsec.Combinator ( choice )
 
-importData :: FilePath -> FilePath -> IO ()
-importData file1 file2 = do
+importData :: String -> FilePath -> FilePath -> IO ()
+importData genename file1 file2 = do
   tsvData <- BL.readFile file1
   metaData <- BL.readFile file2
   let decodeOptions = defaultDecodeOptions {
@@ -71,11 +76,17 @@ importData file1 file2 = do
     (Left err, _) -> putStrLn $ "Error parsing dataTSV: " ++ err
     (_, Left err) -> putStrLn $ "Error parsing metaTSV: " ++ err
     (Right (header, rows), Right (metaHeader, metaRows)) -> do
-      printHeader header
-      printHeader metaHeader
+      -- printHeader header
+      -- printHeader metaHeader
       -- print $ getTopGeneId rows
-      let floated = V.map (doohickie . values) $ V.take 10 rows
-      print $ sumSamples floated
+      let floated = V.map (floatIt . values) $ rows
+      let sums = sumSamples floated
+      -- print $ V.map (HM.unionWith (/) sums) floated
+      let entryMatch = V.filter (\x -> HM.lookup "Symbol" (metaValues x) == Just (BS8.pack genename)) metaRows
+      let matchedGeneIds = V.map metaGeneId entryMatch
+      let matchedEntry = V.filter (\x -> any (geneId x ==) matchedGeneIds) rows
+      let namedRecordsMatchedEntry = V.map toNamedRecord matchedEntry
+      print $ encodeByName header $ V.toList namedRecordsMatchedEntry
       -- let a = V.head metaRows
       -- let b = metaGeneId a
       -- let c = metaValues a
@@ -100,8 +111,8 @@ importData file1 file2 = do
       -- putStrLn "gene ids"
       -- print $ getGeneIds rows
 
-doohickie :: HM.HashMap BS8.ByteString BS8.ByteString -> HM.HashMap BS8.ByteString Float
-doohickie inputMap = HM.mapMaybe parseFloat inputMap
+floatIt :: HM.HashMap BS8.ByteString BS8.ByteString -> HM.HashMap BS8.ByteString Float
+floatIt inputMap = HM.mapMaybe parseFloat inputMap
   where
     parseFloat :: BS8.ByteString -> Maybe Float
     parseFloat bs = case reads (BS8.unpack bs) of
@@ -147,6 +158,15 @@ instance FromNamedRecord NcbiRow where
         restHM = HM.delete firstFieldKey r
     geneIdVal <- r .: firstFieldKey
     return $ NcbiFpkmRow geneIdVal restHM ""
+
+instance ToNamedRecord NcbiRow where
+  toNamedRecord (NcbiFpkmRow geneIdVal restHM "") =
+    namedRecord [ geneIdRelation ] <> namedRecord relation
+    where
+      weirdFun = (\(key, value) -> key .= value)
+      relation = map weirdFun (HM.toList restHM)
+      geneIdRelation = ("GeneID" .= geneIdVal)
+
 
 instance FromNamedRecord MetadataRow where
   parseNamedRecord :: NamedRecord -> Parser MetadataRow

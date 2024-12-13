@@ -41,7 +41,7 @@ main = do
   args <- getArgs
   case args of
     (x:xs) -> case x of
-      "import-data" -> importData (head xs :: FilePath) ((head . tail) xs :: FilePath)
+      "import-data" -> importData (head xs :: String) ((head . tail) xs :: FilePath) ((head . tail . tail) xs :: FilePath)
       "stuff" -> do
         z <- getArgs
         processTFPathways z
