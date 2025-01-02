@@ -1,15 +1,15 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE StrictData #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE GADTs
+  , OverloadedStrings
+  , InstanceSigs
+  , DeriveGeneric
+  , ScopedTypeVariables
+  , DerivingVia
+  , StrictData
+  , FlexibleContexts
+  , MultiParamTypeClasses
+  , DeriveAnyClass
+  , DerivingVia
+  , DefaultSignatures #-}
 
 module RnaSeq ( importData
               , processTFPathways) where
@@ -115,6 +115,12 @@ geneKeyToValues key rows = V.head $ V.filter (\row -> geneId row == key) rows
 getGeneIds :: V.Vector NcbiRow -> V.Vector String
 getGeneIds = V.map geneId
 
+-- Options: GADT, TypeFamilies, QuantifiableInstances,
+
+-- Want: Functions that are valid for all instances within a type
+-- class constraint. Then, we want to write functions that are happy
+-- to take in input for anything that falls into a given typeclass.
+
 data NcbiRow = NcbiFpkmRow
   { geneId :: !String
   , values :: HM.HashMap BS8.ByteString Float
@@ -181,73 +187,7 @@ processTFPathways thing = do
       Left err -> print err
       Right result -> print result
   else
-    putStrLn "nothing"
-
-data NucleicAcidBase = DnaBase | RnaBase
-  deriving (Show, Eq)
-
-data DnaBase = DA | DT | DC | DG
-  deriving (Show, Eq, Generic)
-  -- deriving Codonable
-
-data RnaBase = A | U | C | G
-  deriving (Show, Eq, Generic)
-  -- deriving Codonable
-
-class Complement a where
-  complement :: a -> a
-
--- class Codonable a where
---   default codons :: [a] -> [(a,a,a)]
---   codons = codonsGeneric
-
--- codonsGeneric :: [a] -> [(a,a,a)]
--- codonsGeneric (a:b:c:xs) = (a,b,c) : codonsGeneric xs
--- codonsGeneric _ = []
-
--- class Readingframe a where
---   readingframe :: 
-
-instance Complement DnaBase where
-    complement :: DnaBase -> DnaBase
-    complement DA = DT
-    complement DT = DA
-    complement DC = DG
-    complement DG = DC
-
-instance Complement RnaBase where
-    complement :: RnaBase -> RnaBase
-    complement A = U
-    complement U = A
-    complement C = G
-    complement G = C
-
-class Transcribe a b where
-    transcribe :: a -> b
-
-instance Transcribe DnaBase RnaBase where
-    transcribe DA = A
-    transcribe DT = U
-    transcribe DC = C
-    transcribe DG = G
-
-type DnaSequence = [DnaBase]
-type RnaSequence = [RnaBase]
-
-newtype Quality = Quality { unQuality :: Int }
-    deriving (Show, Eq)
-
-data FastqBase = FastqBase 
-    { baseValue :: NucleicAcidBase
-    , quality :: Quality }
-    deriving (Show, Eq)
-
--- [ ] We need some rules here about parsing
-
--- [ ] We need to know what the gene ids convert to
-  
--- ! Goal is to set up monads so that we can apply a series of
--- ! transformations with bind.
+    putStrLn "nothing"s
 
 data Count = Fpkm Float| Fpm Float | RawCount Int
   
@@ -264,3 +204,4 @@ data Count = Fpkm Float| Fpm Float | RawCount Int
 -- !!!!!! be given type declations so that they are accessible to the
 -- !!!!!! type checker, but they should also be retained if the
 -- !!!!!! pullback should expect them
+

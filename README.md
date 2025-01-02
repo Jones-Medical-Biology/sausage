@@ -65,3 +65,10 @@ hardware.
 
 # Type-level Metaprogramming
 New near-term goal is a reflection of the grant recently written.
+
+# Goal
+Have algebras been defined for the field of genetics, for example?
+The idea is that based on a set of axioms, we want to know what we
+should expect as an output of the system? This might not be always
+easy to calculate or simulate, but science is all about discovering
+these processes.

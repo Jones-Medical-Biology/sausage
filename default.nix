@@ -5,5 +5,6 @@ pkgs.haskellPackages.developPackage {
     pkgs.haskell.lib.addBuildTools drv (with pkgs.haskellPackages;
       [ cabal-install
         pkgs.time
+        JuicyPixels
       ]);
 }
